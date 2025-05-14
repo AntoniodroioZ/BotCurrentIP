@@ -4,8 +4,8 @@ import time
 import socket
 from dotenv import load_dotenv
 from telegram import Update
-from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackContext
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler
 
 # Cargar las variables de entorno del archivo .env
 load_dotenv()
@@ -29,13 +29,13 @@ def obtener_ip():
 # Comando para enviar la IP actual
 async def ip(update: Update, context: CallbackContext):
     ip = obtener_ip()
-    await update.message.reply_text(f"Tu IP actual es: {ip}")
+    await update.message.reply_text(f"Tu IP actual es: {ip}:25566")
 
 # Enviar la IP de manera automática cada día
 async def enviar_ip_diaria(context: CallbackContext):
     ip = obtener_ip()
     chat_id = context.job.context['chat_id']
-    await context.bot.send_message(chat_id=chat_id, text=f"IP diaria actualizada: {ip+":25565"}")
+    await context.bot.send_message(chat_id=chat_id, text=f"IP diaria actualizada: {ip+":25566"}")
 
 # Comando /start
 async def start(update: Update, context: CallbackContext):
@@ -53,13 +53,35 @@ async def start(update: Update, context: CallbackContext):
     🔹 **/checkServer**  
     Verifica el **estado del servidor** y te indicaré si está activo o no.
 
-    🌍 Estoy aquí para ayudarte a mantener todo funcionando correctamente. Si necesitas algo más, no dudes en preguntar. ¡Que disfrutes jugando! 🎮
+    🌍 Estoy aquí para ayudarte a mantener todo funcionando correctamente. Si necesitas algo más, no dudes en preguntar (al admin XD). ¡Que disfrutes jugando! 🎮
     """
+    keyboard = [
+        [InlineKeyboardButton("Comando 1", callback_data='command_1')],
+        [InlineKeyboardButton("Comando 2", callback_data='command_2')],
+        [InlineKeyboardButton("Comando 3", callback_data='command_3')]
+    ]
+    # Crear el teclado
+    reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text(welcome_message, parse_mode="Markdown")
+    welcome_message = welcome_message
+    
+    await update.message.reply_text(welcome_message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
     # context.job_queue.run_daily(enviar_ip_diaria, time=time.time(), context={'chat_id': chat_id})
+    
+    # Función para manejar el callback de los botones
+async def button_callback(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.answer()
+
+    # Aquí manejas los callbacks de los botones
+    if query.data == 'command_1':
+        await update.message.reply_text("Has seleccionado Comando 1.")
+    elif query.data == 'command_2':
+        await update.message.reply_text("Has seleccionado Comando 2.")
+    elif query.data == 'command_3':
+        await update.message.reply_text("Has seleccionado Comando 3.")
 
 async def check_server(update: Update, context: CallbackContext):
     ip_servidor = ""
@@ -125,7 +147,8 @@ def main():
     application.add_handler(CommandHandler("notifyStatus", notify_status))
     application.add_handler(CommandHandler("jourada", jourada))
 
-
+    # Agregar el manejador de los botones
+    application.add_handler(CallbackQueryHandler(button_callback))  
     # Inicia el bot
     application.run_polling()
     
